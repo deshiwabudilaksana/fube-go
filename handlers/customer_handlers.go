@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -109,28 +108,15 @@ type StringKey struct{}
 
 func GetCustomer(w http.ResponseWriter, r *http.Request) {
 	currentUser, ok := middlewares.GetUserFromContext(r.Context())
-	// fmt.Println("user access:", currentUser.Access)
-	// fmt.Println("user email:", currentUser.Email)
-	// fmt.Println("user ExpireAt:", currentUser.ExpireAt)
-	fmt.Println("user Vendor:", currentUser.Vendor)
 
-	// const userAccess := currentUser.Access
 	if !ok {
 		http.Error(w, "User data not found", http.StatusBadRequest)
 		return
 	}
 
 	var allCustomer models.Customer
-	database.DB.Where("vendor_id = ?", currentUser.Vendor).Find(&allCustomer)
+	database.DB.Where("vendor_id = ?", currentUser.Vendor.ID).Find(&allCustomer)
 
-	fmt.Println("all cust >>", allCustomer)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allCustomer)
 }
-
-// func TestContext(w http.ResponseWriter, r *http.Request) {
-// 	stringContext, ok := r.Context().Value(requestDataKey{}).(UserData)
-// 	if !ok {
-// 		http.Error(w, "User data not found", http.StatusInternalServerError)
-// 		return
-// 	}
-// 	fmt.Println("Str ctx:", stringContext) // Output: 123
-// }

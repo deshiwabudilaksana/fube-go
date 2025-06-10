@@ -21,7 +21,8 @@ type JwtClaims struct {
 	Email    string
 	Access   models.Role
 	ExpireAt time.Time
-	Vendor   models.Vendor
+	Vendor   *Vendor
+	jwt.RegisteredClaims
 }
 
 type Vendor struct {
@@ -36,16 +37,28 @@ type Vendor struct {
 }
 
 type UserData struct {
-	Access   string         `json:"access"`
-	Email    string         `json:"email"`
-	ExpireAt time.Time      `json:"expireAt"`
-	Username string         `json:"username"`
-	Vendor   map[Vendor]int `json:"vendor"`
+	Access   string    `json:"access"`
+	Email    string    `json:"email"`
+	ExpireAt time.Time `json:"expireAt"`
+	Username string    `json:"username"`
+	Vendor   *Vendor   `json:"vendor"`
 }
 
 type ctxKey string
 
 const userContextKey ctxKey = "user"
+
+func NewAuthContext(claims *JwtClaims) *UserData {
+	authCtx := &UserData{
+		Access:   string(claims.Access),
+		Email:    claims.Email,
+		ExpireAt: claims.ExpireAt,
+		Username: claims.Username,
+		Vendor:   claims.Vendor,
+	}
+
+	return authCtx
+}
 
 func Bearer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -74,37 +87,43 @@ func Bearer(next http.Handler) http.Handler {
 			return
 		}
 
-		decodedToken := token.Claims.(*jwt.MapClaims)
+		tokenClaims, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return JWTSecret, nil
+		})
 
-		decodedString := make(map[string]interface{})
+		// if claims, ok := tokenClaims.Claims.(jwt.MapClaims); ok && token.Valid {
+		// 	fmt.Println("\n=== Standard Claims (MapClaims) ===")
+		// 	for key, value := range claims {
+		// 		fmt.Printf("%s: %v\n", key, value)
+		// 	}
+		// }
 
-		for k, v := range *decodedToken {
-			decodedString[k] = v
-		}
+		claims := tokenClaims.Claims.(*JwtClaims)
 
-		expireAt, err := time.Parse(time.RFC3339, decodedString["expireAt"].(string))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusFailedDependency)
-			return
-		}
+		authContext := NewAuthContext(claims)
 
-		fmt.Println("decoded token >>", decodedString)
-
-		var vendorMap map[Vendor]int
+		fmt.Println("new auth context >>>", authContext)
 
 		authUser := UserData{
-			Access:   decodedString["access"].(string),
-			Email:    decodedString["email"].(string),
-			ExpireAt: expireAt,
-			Username: decodedString["username"].(string),
-			Vendor:   vendorMap,
+			Access:   authContext.Access,
+			Email:    authContext.Email,
+			ExpireAt: authContext.ExpireAt,
+			Username: authContext.Username,
+			Vendor:   authContext.Vendor,
 		}
+
+		fmt.Println(authUser)
 		ctx := context.WithValue(r.Context(), userContextKey, authUser)
+		// ctx := context.WithValue(r.Context(), userContextKey, authContext)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func GetUserFromContext(ctx context.Context) (UserData, bool) {
 	user, ok := ctx.Value(userContextKey).(UserData)
+	fmt.Println("user login >>", user)
 	return user, ok
 }
