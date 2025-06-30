@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Role enum
@@ -52,7 +54,7 @@ func (Vendor) TableName() string {
 
 // Customer model
 type Customer struct {
-	ID        string    `gorm:"column:id;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
 	FullName  string    `gorm:"column:full_name" json:"full_name"`
 	Birthdate time.Time `gorm:"column:birthdate" json:"birthdate"`
 	Phone     string    `gorm:"column:phone" json:"phone"`
