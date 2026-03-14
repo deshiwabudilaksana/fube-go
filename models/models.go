@@ -18,7 +18,7 @@ const (
 
 // User model
 type User struct {
-	ID         string    `gorm:"column:id;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Username   string    `gorm:"column:username" json:"username"`
 	Email      string    `gorm:"column:email" json:"email"`
 	Phone      string    `gorm:"column:phone" json:"phone"`
@@ -37,7 +37,7 @@ func (User) TableName() string {
 
 // Vendor model
 type Vendor struct {
-	ID          string    `gorm:"column:id;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey"`
 	CompanyName string    `gorm:"column:company_name" json:"company_name"`
 	Email       string    `gorm:"column:email" json:"email"`
 	Phone       string    `gorm:"column:phone" json:"phone"`
@@ -70,7 +70,7 @@ func (Customer) TableName() string {
 
 // Transaction model
 type Transaction struct {
-	ID               string    `gorm:"column:id;type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	ID               uuid.UUID `gorm:"type:uuid;primaryKey"`
 	CustomerID       int       `gorm:"column:customer_id" json:"customer_id"`
 	EmployeeID       int       `gorm:"column:employee_id" json:"employee_id"`
 	VendorID         string    `gorm:"column:vendor_id" json:"vendor_id"`
@@ -82,4 +82,87 @@ type Transaction struct {
 // TableName specifies the table name for Transaction
 func (Transaction) TableName() string {
 	return "transaction"
+}
+
+// FoodMaterial model
+type FoodMaterial struct {
+	ID        int       `gorm:"primaryKey" json:"id"`
+	VendorID  int       `gorm:"column:vendor_id" json:"vendor_id"`
+	Name      string    `json:"name"`
+	Unit      string    `json:"unit"`
+	UnitCost  int       `gorm:"column:unit_cost" json:"unit_cost"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// Menu model
+type Menu struct {
+	ID            int         `gorm:"primaryKey" json:"id"`
+	VendorID      int         `gorm:"column:vendor_id" json:"vendor_id"`
+	Name          string      `json:"name"`
+	Type          string      `json:"type"`
+	Unit          string      `json:"unit"`
+	Price         int         `json:"price"`
+	ExternalPosID *string     `gorm:"column:external_pos_id" json:"external_pos_id"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
+	MenuYields    []MenuYield `gorm:"foreignKey:MenuID" json:"menu_yields"`
+}
+
+// Yield model
+type Yield struct {
+	ID             int             `gorm:"primaryKey" json:"id"`
+	VendorID       int             `gorm:"column:vendor_id" json:"vendor_id"`
+	Name           string          `json:"name"`
+	Unit           string          `json:"unit"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+	YieldMaterials []YieldMaterial `gorm:"foreignKey:YieldID" json:"yield_materials"`
+}
+
+// YieldMaterial model
+type YieldMaterial struct {
+	ID             int          `gorm:"primaryKey" json:"id"`
+	FoodMaterialID int          `gorm:"column:food_material_id" json:"food_material_id"`
+	FoodMaterial   FoodMaterial `gorm:"foreignKey:FoodMaterialID" json:"food_material"`
+	YieldID        int          `gorm:"column:yield_id" json:"yield_id"`
+	MaterialAmount int          `gorm:"column:material_amount" json:"material_amount"`
+	Unit           string       `json:"unit"`
+}
+
+// MenuYield model
+type MenuYield struct {
+	ID          int       `gorm:"primaryKey" json:"id"`
+	MenuID      int       `gorm:"column:menu_id" json:"menu_id"`
+	YieldID     int       `gorm:"column:yield_id" json:"yield_id"`
+	Yield       Yield     `gorm:"foreignKey:YieldID" json:"yield"`
+	YieldAmount int       `gorm:"column:yield_amount" json:"yield_amount"`
+	Unit        string    `json:"unit"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// TableName specifies the table name for FoodMaterial
+func (FoodMaterial) TableName() string {
+	return "FoodMaterial"
+}
+
+// TableName specifies the table name for Menu
+func (Menu) TableName() string {
+	return "Menu"
+}
+
+// TableName specifies the table name for Yield
+func (Yield) TableName() string {
+	return "Yield"
+}
+
+// TableName specifies the table name for YieldMaterial
+func (YieldMaterial) TableName() string {
+	return "YieldMaterial"
+}
+
+// TableName specifies the table name for MenuYield
+func (MenuYield) TableName() string {
+	return "MenuYield"
 }

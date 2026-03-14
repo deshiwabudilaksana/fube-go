@@ -55,5 +55,52 @@ func NewRouter() *mux.Router {
 		Combined those 2 method, using subrouter for authentication and implement middlewares for specific routes
 	*/
 
+	/*
+		Super User only, can create new owner
+	*/
+	apiRoute.Handle("/create_owner", middlewares.SuperUserValidation(middlewares.UserTypeOwnerContext(http.HandlerFunc(handlers.CreateUser))))
+	apiRoute.Handle("/create_vendor", middlewares.SuperUserValidation(http.HandlerFunc(handlers.AddVendor)))
+
+	// Yield Recipe Planning Handlers
+	apiRoute.HandleFunc("/menus/{id}/cost", handlers.GetMenuCostHandler).Methods("GET")
+	apiRoute.HandleFunc("/planning/production", handlers.PlanProductionHandler).Methods("POST")
+	apiRoute.HandleFunc("/reports/external", handlers.GetExternalReportingHandler).Methods("GET")
+	apiRoute.HandleFunc("/export/costs", handlers.DownloadCostReportHandler).Methods("GET")
+	apiRoute.HandleFunc("/import/csv", handlers.ImportCSVHandler).Methods("POST")
+
+	// Auth Handlers (Public)
+	r.HandleFunc("/login", handlers.ShowLogin).Methods("GET")
+	r.HandleFunc("/login", handlers.PostLogin).Methods("POST")
+	r.HandleFunc("/register", handlers.ShowRegister).Methods("GET")
+	r.HandleFunc("/register", handlers.PostRegister).Methods("POST")
+	r.HandleFunc("/logout", handlers.Logout).Methods("POST")
+
+	// Frontend Handlers (HTMX - Protected)
+	fe := r.PathPrefix("/").Subrouter()
+	fe.Use(middlewares.Bearer)
+
+	fe.HandleFunc("/yield-planning", handlers.RenderYieldPlanning).Methods("GET")
+	fe.HandleFunc("/yield-planning/update", handlers.UpdateYieldPlanning).Methods("POST")
+	fe.HandleFunc("/import", handlers.RenderImport).Methods("GET")
+	fe.HandleFunc("/inventory", handlers.GetInventoryDashboard).Methods("GET")
+	fe.HandleFunc("/inventory/stock-take", handlers.PostStockTake).Methods("POST")
+
+	// Mapping UI Handlers
+	fe.HandleFunc("/mapping", handlers.GetMappingDashboard).Methods("GET")
+	fe.HandleFunc("/mapping/search-yields", handlers.SearchYields).Methods("GET")
+	fe.HandleFunc("/mapping/update", handlers.UpdateMenuMapping).Methods("POST")
+	fe.HandleFunc("/mapping/picker", handlers.RenderRecipePicker).Methods("GET")
+	fe.HandleFunc("/export/costs", handlers.DownloadCostReportHandler).Methods("GET")
+
+	// KDS Handlers
+	fe.HandleFunc("/kds", handlers.GetKDSBoard).Methods("GET")
+	fe.HandleFunc("/kds/updates", handlers.GetKDSBoard).Methods("GET")
+	fe.HandleFunc("/kds/orders/{id}/status", handlers.UpdateOrderStatus).Methods("POST")
+	fe.HandleFunc("/kds/new-count", handlers.GetNewOrdersCount).Methods("GET")
+
+	// Supplier Handlers
+	fe.HandleFunc("/suppliers", handlers.GetSupplierDashboard).Methods("GET")
+	fe.HandleFunc("/suppliers/generate-po", handlers.PostGeneratePO).Methods("POST")
+
 	return r
 }

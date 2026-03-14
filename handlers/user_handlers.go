@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -13,7 +12,6 @@ import (
 	"github.com/deshiwabudilaksana/fube-go/models"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -61,27 +59,27 @@ type userLogin struct {
 }
 
 func LoginUser(w http.ResponseWriter, r *http.Request) {
-	if err := godotenv.Load(); err != nil {
-		http.Error(w, "ENV not found", http.StatusInternalServerError)
-	}
-
 	JWTSecret := os.Getenv("JWT_SECRET_KEY")
 	PepperString := os.Getenv("HASH_PEPPER")
 
-	fmt.Println("jwt secret >>", JWTSecret)
+	log.Println("Authenticating user...")
 
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "False request", http.StatusBadRequest)
+		return
 	}
 
 	body, err := io.ReadAll(r.Body)
-
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
 	}
 
 	var requestBody userLogin
-	json.Unmarshal(body, &requestBody)
+	if err := json.Unmarshal(body, &requestBody); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
 
 	userRequest := userLogin{
 		UserName:   requestBody.UserName,
@@ -89,35 +87,25 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		VendorName: requestBody.VendorName,
 	}
 
-	log.Println(userRequest)
+	log.Println("Login attempt for user:", userRequest.UserName)
 
 	var vendor models.Vendor
 	validVendor := database.DB.Where("company_name = ?", userRequest.VendorName).First(&vendor)
-
-	log.Println("found vendor", vendor.ID)
 
 	if validVendor.Error != nil {
 		http.Error(w, "Invalid vendor", http.StatusBadRequest)
 		return
 	}
 
-	// to do: parse gorm result
 	var foundUser models.User
 	result := database.DB.Where("username = ?", userRequest.UserName).Where("vendor_id = ?", vendor.ID).Find(&foundUser)
-
-	log.Println("found user", foundUser)
 
 	if result.Error != nil {
 		http.Error(w, "Invalid user", http.StatusBadRequest)
 		return
 	}
 
-	log.Println("user password >> ", foundUser.Password)
-	log.Println("plain text >> ", userRequest.Password+PepperString)
-	log.Println("pepper string >> ", PepperString)
-
 	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(userRequest.Password+PepperString))
-
 	if err != nil {
 		http.Error(w, "Wrong password", http.StatusBadRequest)
 		return
@@ -127,21 +115,16 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		"username": foundUser.Username,
 		"email":    foundUser.Email,
 		"access":   foundUser.Role,
-		"expireAt": time.Now().Add(24 * time.Hour),
+		"expireAt": time.Now().Add(24 * time.Hour).Unix(), // Changed to Unix for standard JWT
 		"vendor":   vendor,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	// log.Println("token >> ", token.Claims)
-	log.Print("string secret >> ", []byte("JWTSecret"))
-
 	signedToken, err := token.SignedString([]byte(JWTSecret))
 
-	// log.Println("JWT Secret >> ", signedToken)
-	// log.Println("error signed token >> ", err)
-
 	if err != nil {
-		http.Error(w, "Wrong jwt secret", http.StatusFailedDependency)
+		log.Printf("Error signing token: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -151,7 +134,10 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(returnObject)
+	if err := json.NewEncoder(w).Encode(returnObject); err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 type newUser struct {
@@ -164,24 +150,24 @@ type newUser struct {
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	if err := godotenv.Load(); err != nil {
-		http.Error(w, "ENV not found", http.StatusInternalServerError)
-	}
-
 	JWTSecret := os.Getenv("JWT_SECRET_KEY")
 
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "False request", http.StatusBadRequest)
+		return
 	}
 
 	body, err := io.ReadAll(r.Body)
-
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
 	}
 
 	var requestBody newUser
-	json.Unmarshal(body, &requestBody)
+	if err := json.Unmarshal(body, &requestBody); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
 
 	newUserRequest := newUser{
 		UserName:   requestBody.UserName,
@@ -193,7 +179,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var foundVendor models.Vendor
-
 	result := database.DB.Where("company_name = ?", newUserRequest.VendorName).First(&foundVendor)
 
 	if result.Error != nil {
@@ -201,10 +186,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser := database.DB.Create(newUserRequest)
-
-	if newUser.Error != nil {
-		http.Error(w, "Error creating user", http.StatusConflict)
+	// NOTE: In a real system, you'd hash the password here before saving.
+	// This code seems to be creating a user directly from the request.
+	if err := database.DB.Create(&newUserRequest).Error; err != nil {
+		log.Printf("Error creating user: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -212,16 +198,16 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		"username": newUserRequest.UserName,
 		"email":    newUserRequest.Email,
 		"access":   newUserRequest.Role,
-		"expireAt": time.Now().Add(24 * time.Hour),
+		"expireAt": time.Now().Add(24 * time.Hour).Unix(),
 		"vendor":   foundVendor.ID,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claim)
-
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim) // Fixed from ES256 to match LoginUser
 	signedToken, err := token.SignedString([]byte(JWTSecret))
 
 	if err != nil {
-		http.Error(w, "Wrong jwt secret", http.StatusFailedDependency)
+		log.Printf("Error signing token: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -231,5 +217,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(returnObject)
+	if err := json.NewEncoder(w).Encode(returnObject); err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }

@@ -58,12 +58,6 @@ func GetAllCustomersHandlers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(customers)
 }
 
-type CustomerInput struct {
-	Name      string
-	Birthdate time.Time
-	Phone     string
-}
-
 func AddCustomer(w http.ResponseWriter, r *http.Request) {
 	currentUser, ok := middlewares.GetUserFromContext(r.Context())
 
@@ -86,7 +80,7 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) {
 
 	//To do: add authentication
 
-	var input CustomerInput
+	var input middlewares.CustomerInput
 
 	// Decode JSON body into struct
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -125,7 +119,7 @@ func TestGetRequestBody(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Can not send empty request", http.StatusBadRequest)
 	}
 
-	customer := CustomerInput{
+	customer := middlewares.CustomerInput{
 		Name: r.Form.Get("name"),
 		// Birthdate: r.Form.Get("birthdate"),
 		Phone: r.Form.Get("phone"),

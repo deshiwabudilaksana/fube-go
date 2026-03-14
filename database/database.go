@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"log"
 	"sync"
 
@@ -30,7 +29,6 @@ func ConnectDB(databaseURL string) {
 			log.Fatal("failed to connect database:", err)
 		}
 
-		fmt.Println("Successfully connected to the database!")
-
+		log.Println("Successfully connected to the database!")
 	})
 }

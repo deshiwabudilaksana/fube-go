@@ -1,0 +1,112 @@
+{{define "main"}}
+<div id="supplier-dashboard" class="space-y-8 animate-fade-in">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Supplier Ordering</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage purchase orders and automated supply suggestions.</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button hx-post="/suppliers/generate-po" 
+                    hx-target="#po-status" 
+                    class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-bold rounded-xl shadow-lg shadow-primary-200 text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                Generate Draft POs
+            </button>
+        </div>
+    </div>
+
+    <div id="po-status" class="empty:hidden"></div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <!-- Suggested Orders Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                <h2 class="font-bold text-gray-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                    Order Suggestions
+                </h2>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-100 px-2 py-1 rounded">Based on Inventory</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50/30">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Material</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Preferred Supplier</th>
+                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Order Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {{range .SuggestedOrders}}
+                        <tr class="hover:bg-gray-50/80 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{.MaterialName}}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                    {{.SupplierName}}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                <span class="font-black text-primary-600">{{.OrderQty}}</span>
+                            </td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="3" class="px-6 py-12 text-center text-gray-400 italic">
+                                <p class="text-sm">Everything is in stock. No suggestions at this time.</p>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pending Purchase Orders Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                <h2 class="font-bold text-gray-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
+                    Recent Purchase Orders
+                </h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50/30">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order ID</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {{range .PendingOrders}}
+                        <tr class="hover:bg-gray-50/80 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-xs font-mono font-bold text-gray-400">{{.ID.Hex}}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-[10px] leading-5 font-black uppercase tracking-widest rounded-full 
+                                    {{if eq .Status "DRAFT"}}bg-gray-100 text-gray-600 border border-gray-200
+                                    {{else if eq .Status "SENT"}}bg-amber-100 text-amber-700 border border-amber-200
+                                    {{else}}bg-emerald-100 text-emerald-700 border border-emerald-200{{/if}}">
+                                    {{.Status}}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-black text-gray-900">${{.Total}}</td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="3" class="px-6 py-12 text-center text-gray-400 italic">
+                                <p class="text-sm">No active purchase orders found.</p>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-100 text-center">
+                <a href="#" class="text-xs font-bold text-primary-600 hover:text-primary-700 uppercase tracking-widest">View Order History &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,81 @@
+{{define "main"}}
+<div id="import-section" class="max-w-xl mx-auto animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-8 border-b border-gray-100 bg-gray-50/50">
+            <div class="flex items-center space-x-4">
+                <div class="bg-primary-100 p-3 rounded-xl text-primary-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">Import POS Data</h1>
+                    <p class="text-sm text-gray-500">Upload your Square or Toast export files.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8">
+            <!-- Success/Failure Message Target -->
+            <div id="import-response" class="mb-6"></div>
+
+            <form hx-post="/api/import/csv" 
+                  hx-encoding="multipart/form-data" 
+                  hx-target="#import-response" 
+                  hx-indicator="#loading-spinner"
+                  class="space-y-6">
+                
+                <input type="hidden" name="store_id" value="main" />
+
+                <div class="group relative">
+                    <label for="csv_file" class="flex flex-col items-center justify-center w-full h-56 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50 hover:bg-primary-50 hover:border-primary-300 transition-all duration-200">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <div class="bg-white p-4 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                                <svg class="w-8 h-8 text-gray-400 group-hover:text-primary-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                </svg>
+                            </div>
+                            <p class="mb-2 text-sm text-gray-600 font-semibold">Click to upload <span class="text-gray-400 font-normal">or drag and drop</span></p>
+                            <p class="text-xs text-gray-400 font-medium">CSV files only (Max 10MB)</p>
+                        </div>
+                        <input id="csv_file" name="csv_file" type="file" class="hidden" accept=".csv" required />
+                    </label>
+                </div>
+
+                <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-primary-200 text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all">
+                    Process & Analyze Import
+                </button>
+            </form>
+
+            <!-- Loading state indicator -->
+            <div id="loading-spinner" class="htmx-indicator mt-8">
+                <div class="flex flex-col items-center">
+                    <div class="flex space-x-1 mb-4">
+                        <div class="w-2 h-2 bg-primary-600 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                        <div class="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
+                    <p class="text-xs font-bold text-primary-600 uppercase tracking-widest">Analyzing POS Data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Card -->
+    <div class="mt-8 bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
+        <h3 class="text-sm font-bold text-indigo-900 mb-2">Supported Formats</h3>
+        <ul class="text-sm text-indigo-800/70 space-y-2">
+            <li class="flex items-center">
+                <svg class="w-4 h-4 mr-2 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                Square Item Library (CSV)
+            </li>
+            <li class="flex items-center">
+                <svg class="w-4 h-4 mr-2 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                Toast Menu Export (CSV)
+            </li>
+            <li class="flex items-center">
+                <svg class="w-4 h-4 mr-2 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                Standard FUBE Template
+            </li>
+        </ul>
+    </div>
+</div>
+{{end}}

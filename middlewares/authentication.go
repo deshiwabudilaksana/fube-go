@@ -3,37 +3,34 @@ package middlewares
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
-
-	// "encoding/json"
+	"time"
 
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/deshiwabudilaksana/fube-go/models"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
 )
 
 type JwtClaims struct {
-	Username string
-	Email    string
-	Access   models.Role
-	ExpireAt time.Time
-	Vendor   *Vendor
+	UserID   string `json:"user_id"`
+	VendorID string `json:"vendor_id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
 type Vendor struct {
-	Address     string    `json:"address"`
-	CompanyName string    `json:"company_name"`
-	CreatedAt   time.Time `json:"created_at"`
-	Email       string    `json:"email"`
 	ID          string    `json:"id"`
-	IsRemoved   bool      `json:"is_removed"`
-	Phone       string    `json:"phone"`
-	UserID      string    `json:"user_id"`
+	Address     string    `json:"address,omitempty"`
+	CompanyName string    `json:"company_name,omitempty"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
+	Email       string    `json:"email,omitempty"`
+	IsRemoved   bool      `json:"is_removed,omitempty"`
+	Phone       string    `json:"phone,omitempty"`
+	UserID      string    `json:"user_id,omitempty"`
 }
 
 type UserData struct {
@@ -42,88 +39,102 @@ type UserData struct {
 	ExpireAt time.Time `json:"expireAt"`
 	Username string    `json:"username"`
 	Vendor   *Vendor   `json:"vendor"`
+	UserID   string    `json:"user_id"`
 }
 
 type ctxKey string
 
 const userContextKey ctxKey = "user"
 
-func NewAuthContext(claims *JwtClaims) *UserData {
-	authCtx := &UserData{
-		Access:   string(claims.Access),
-		Email:    claims.Email,
-		ExpireAt: claims.ExpireAt,
-		Username: claims.Username,
-		Vendor:   claims.Vendor,
-	}
-
-	return authCtx
-}
-
 func Bearer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := godotenv.Load(); err != nil {
-			http.Error(w, "ENV not found", http.StatusInternalServerError)
-		}
+		log.Println("running auth bearer >>>")
 
-		fmt.Println("running auth bearer >>>")
-		// Get a single header value
+		var tokenString string
+
+		// 1. Check Authorization header
 		bearer := r.Header.Get("Authorization")
-		splitBearer := strings.Split(bearer, " ")
+		if bearer != "" {
+			splitBearer := strings.Split(bearer, " ")
+			if len(splitBearer) >= 2 {
+				tokenString = splitBearer[1]
+			}
+		}
+
+		// 2. Check jwt cookie if header is missing or empty
+		if tokenString == "" {
+			cookie, err := r.Cookie("jwt")
+			if err == nil {
+				tokenString = cookie.Value
+			}
+		}
+
+		if tokenString == "" {
+			// If it's a browser request (HTMX or regular GET), redirect to login
+			if r.Header.Get("HX-Request") == "true" || strings.Contains(r.Header.Get("Accept"), "text/html") {
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		JWTSecret := os.Getenv("JWT_SECRET_KEY")
-
-		tokenString := splitBearer[1]
-		token, err := jwt.ParseWithClaims(tokenString, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
-			return []byte(JWTSecret), nil
-		})
-
-		if err != nil {
-			http.Error(w, "Unable to verify token", http.StatusFailedDependency)
+		if JWTSecret == "" {
+			log.Println("JWT_SECRET_KEY is not set")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
-		if !token.Valid {
-			http.Error(w, "Invalid token", http.StatusFailedDependency)
-			return
-		}
-
-		tokenClaims, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return JWTSecret, nil
+			return []byte(JWTSecret), nil
 		})
 
-		// if claims, ok := tokenClaims.Claims.(jwt.MapClaims); ok && token.Valid {
-		// 	fmt.Println("\n=== Standard Claims (MapClaims) ===")
-		// 	for key, value := range claims {
-		// 		fmt.Printf("%s: %v\n", key, value)
-		// 	}
-		// }
-
-		claims := tokenClaims.Claims.(*JwtClaims)
-
-		authContext := NewAuthContext(claims)
-
-		fmt.Println("new auth context >>>", authContext)
-
-		authUser := UserData{
-			Access:   authContext.Access,
-			Email:    authContext.Email,
-			ExpireAt: authContext.ExpireAt,
-			Username: authContext.Username,
-			Vendor:   authContext.Vendor,
+		if err != nil || !token.Valid {
+			if r.Header.Get("HX-Request") == "true" {
+				w.Header().Set("HX-Redirect", "/login")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
 		}
 
-		fmt.Println(authUser)
+		claims, ok := token.Claims.(*JwtClaims)
+		if !ok {
+			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+			return
+		}
+
+		// Check expiration
+		if claims.ExpiresAt != nil && claims.ExpiresAt.Before(time.Now()) {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		authUser := UserData{
+			Access:   claims.Role,
+			Email:    claims.Email,
+			Username: claims.Username,
+			UserID:   claims.UserID,
+			Vendor: &Vendor{
+				ID: claims.VendorID,
+			},
+		}
+
+		if claims.ExpiresAt != nil {
+			authUser.ExpireAt = claims.ExpiresAt.Time
+		}
+
 		ctx := context.WithValue(r.Context(), userContextKey, authUser)
-		// ctx := context.WithValue(r.Context(), userContextKey, authContext)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func GetUserFromContext(ctx context.Context) (UserData, bool) {
 	user, ok := ctx.Value(userContextKey).(UserData)
-	fmt.Println("user login >>", user)
 	return user, ok
 }
