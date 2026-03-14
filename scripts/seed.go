@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"time"
@@ -9,15 +10,22 @@ import (
 	"github.com/deshiwabudilaksana/fube-go/config"
 	"github.com/deshiwabudilaksana/fube-go/db"
 	"github.com/deshiwabudilaksana/fube-go/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
-	vendorID     = "demo-vendor"
 	databaseName = "fube_local"
 )
 
 func main() {
+	// Parse command line arguments for a dynamic vendor ID
+	var vendorID string
+	var clearAll bool
+	flag.StringVar(&vendorID, "vendor", "demo-vendor", "The Vendor ID to seed data for")
+	flag.BoolVar(&clearAll, "clear", false, "Clear ALL data in collections before seeding (Warning: Destructive!)")
+	flag.Parse()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
@@ -26,7 +34,7 @@ func main() {
 	// Override database name if needed for seeding local env
 	cfg.MongoDBName = databaseName
 
-	fmt.Printf("Seeding MongoDB database: %s\n", cfg.MongoDBName)
+	fmt.Printf("Seeding MongoDB database: %s for Vendor ID: '%s'\n", cfg.MongoDBName, vendorID)
 
 	// Connect to MongoDB
 	client, err := db.GetConnection(ctx, cfg)
@@ -35,12 +43,23 @@ func main() {
 	}
 	database := client.Database(cfg.MongoDBName)
 
-	// 1. Clear existing collections
+	// 1. Clear existing collections (optional based on flags)
 	collections := []string{"materials", "yields", "menus"}
-	for _, collName := range collections {
-		fmt.Printf("Clearing collection: %s\n", collName)
-		if err := database.Collection(collName).Drop(ctx); err != nil {
-			log.Fatalf("CRITICAL: Failed to drop collection %s: %v", collName, err)
+	if clearAll {
+		for _, collName := range collections {
+			fmt.Printf("Clearing ENTIRE collection: %s\n", collName)
+			if err := database.Collection(collName).Drop(ctx); err != nil {
+				log.Fatalf("CRITICAL: Failed to drop collection %s: %v", collName, err)
+			}
+		}
+	} else {
+		// Just delete documents for this specific vendor
+		for _, collName := range collections {
+			fmt.Printf("Clearing data for vendor '%s' in collection: %s\n", vendorID, collName)
+			_, err := database.Collection(collName).DeleteMany(ctx, bson.M{"vendor_id": vendorID})
+			if err != nil {
+				log.Printf("Warning: Failed to clear vendor data in %s: %v", collName, err)
+			}
 		}
 	}
 
