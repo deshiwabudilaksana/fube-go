@@ -75,6 +75,9 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/register", handlers.PostRegister).Methods("POST")
 	r.HandleFunc("/logout", handlers.Logout).Methods("POST")
 
+	// Landing Page (Public)
+	r.HandleFunc("/", handlers.RenderLandingPage).Methods("GET")
+
 	// Frontend Handlers (HTMX - Protected)
 	fe := r.PathPrefix("/").Subrouter()
 	fe.Use(middlewares.Bearer)

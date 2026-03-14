@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fube Go - Restaurant Intelligence & Operations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans antialiased text-gray-900 bg-white">
+    <!-- Navbar -->
+    <header class="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold tracking-tight text-primary-950">Fube<span class="text-primary-600">Go</span></span>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/login" class="text-gray-600 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Sign In</a>
+                    <a href="/register" class="bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm">Get Started</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 mb-6">
+                Stop Guessing.<br>Start <span class="text-primary-600">Controlling Your Food Costs.</span>
+            </h1>
+            <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto mb-10">
+                Fube Go is the modern, unified engine for restaurant operations. Manage recipes, calculate real-time yields, track inventory, and sync with your legacy POS effortlessly.
+            </p>
+            <div class="flex justify-center gap-4">
+                <a href="/register" class="bg-primary-600 text-white hover:bg-primary-700 px-8 py-4 rounded-lg text-lg font-semibold transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all">Start Free Trial</a>
+                <a href="#how-it-works" class="bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 px-8 py-4 rounded-lg text-lg font-semibold transition-colors shadow-sm">See How It Works</a>
+            </div>
+        </div>
+        
+        <!-- Background decoration -->
+        <div class="absolute top-0 inset-x-0 h-full overflow-hidden -z-10 flex justify-center pointer-events-none">
+            <div class="w-full max-w-7xl relative">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-50 rounded-full blur-3xl opacity-50"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works / Features -->
+    <section id="how-it-works" class="py-20 bg-gray-50 border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-900">How Fube Go Works</h2>
+                <p class="mt-4 text-lg text-gray-600">Four simple steps to mastering your restaurant operations.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Step 1 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6">1</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Import POS Data</h3>
+                    <p class="text-gray-600">Upload a CSV from Square, Toast, or Clover. We instantly map your sales items into our system.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6">2</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Build Recipes</h3>
+                    <p class="text-gray-600">Input your raw materials and create "Yields". We calculate the exact cost of every dish down to the gram.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6">3</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Yield Planning</h3>
+                    <p class="text-gray-600">Enter your expected sales for the day, and we automatically generate your kitchen prep and purchase lists.</p>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6">4</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Control Leaks</h3>
+                    <p class="text-gray-600">Compare your theoretical stock against physical counts. Identify waste, theft, and portioning errors instantly.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-20 bg-primary-950 text-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">Ready to take control of your kitchen?</h2>
+            <p class="text-primary-200 text-lg mb-10">Join modern restaurants using Fube Go to maximize their profit margins.</p>
+            <a href="/register" class="bg-white text-primary-900 hover:bg-gray-100 px-8 py-4 rounded-lg text-lg font-bold transition-colors shadow-lg">Create Your Account</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white py-12 border-t border-gray-100 text-center text-gray-500">
+        <p>&copy; 2026 Fube Go Operations Inc. All rights reserved.</p>
+    </footer>
+</body>
+</html>

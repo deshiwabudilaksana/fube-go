@@ -16,6 +16,20 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// RenderLandingPage renders the public landing page for user onboarding
+func RenderLandingPage(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("templates/landing.html")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Template parse error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.Execute(w, nil)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Template execution error: %v", err), http.StatusInternalServerError)
+	}
+}
+
 // MenuItem represents a menu item in the yield planning table
 type MenuItem struct {
 	ID         string
