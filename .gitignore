@@ -34,6 +34,7 @@ Thumbs.db
 
 # Project-specific / Custom
 .opencode/
+docs/
 __pycache__/
 *.pyc
 
